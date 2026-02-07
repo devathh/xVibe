@@ -1,0 +1,95 @@
+syntax="proto3";
+package auth.v1;
+option go_package="github.com/devathh/xvibe/auth; authpb";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/field_mask.proto";
+
+// Domain model of user
+message User {
+    string id = 1;
+    string email = 2;
+    string firstname = 3;
+    string lastname = 4;
+    string username = 5;
+
+    google.protobuf.Timestamp created_at = 6;
+    google.protobuf.Timestamp updated_at = 7;
+
+    reserved 8 to 15;
+}
+
+// Domain model of session
+message Token {
+    string access = 1;
+    string refresh = 2;
+    google.protobuf.Timestamp refresh_expires_at = 3;
+    google.protobuf.Timestamp access_expires_at = 4;
+
+    reserved 5 to 10;
+}
+
+service Auth {
+    // Create new user and generate a pair of tokens (r+a)
+    // REQUIRES: mtls connection with gateway
+    // METADATA: x-client-ip, x-client-user-agent
+    rpc Register(RegisterRequest) returns (Token);
+    // Generate new pair of tokens (r+a)
+    // REQUIRES: mtls connection with gateway 
+    // METADATA: x-client-ip, x-client-user-agent
+    rpc Login(LoginRequest) returns (Token);
+    // Generate new pair of tokens (r+a)
+    // and delete old session
+    // REQUIRES: mtls connection with gateway
+    // METADATA: x-client-ip, x-client-user-agent
+    rpc Refresh(RefreshRequest) returns (Token);
+    // Update user's data
+    // REQUIRES: mtls connection with gateway
+    // METADATA: jwt-token of user
+    rpc Update(UpdateRequest) returns (User);
+    // Logout all sessions
+    // REQUIRES: mtls connection with gateway
+    // METADATA: jwt-token of user to logout
+    rpc LogoutAll(google.protobuf.Empty) returns (google.protobuf.Empty);
+
+    // Get self-user by jwt-token
+    // REQUIRES: mtls connection with gateway
+    // METADATA: jwt-token of user
+    rpc GetSelf(google.protobuf.Empty) returns (User);
+    // Get user by id
+    // REQUIRES: mtls connection with gateway
+    rpc GetUserByID(GetByIDRequest) returns (User);
+}
+
+message Updates {
+    string firstname = 1;
+    string lastname = 2;
+    string username = 3;
+    string email = 4;
+}
+
+message UpdateRequest {
+    Updates updates = 1;
+    google.protobuf.FieldMask update_mask = 2;
+}
+
+message RegisterRequest {
+    string email = 1;
+    string password = 2;
+    string firstname = 3;
+    string lastname = 4;
+}
+
+message LoginRequest {
+    string email = 1;
+    string password = 2;
+}
+
+message RefreshRequest {
+    string refresh_token = 1;
+}
+
+message GetByIDRequest {
+    string id = 1;
+}

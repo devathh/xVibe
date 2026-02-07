@@ -1,0 +1,60 @@
+# global environment of this service
+env: prod
+
+# naming of this serivce
+app:
+  name: xvibe-auth-service
+  version: v0.0.1
+
+# settings of runner service
+server:
+  grpc:
+    host: 0.0.0.0
+    port: 50050
+    protocol: tcp
+    # tls config
+    tls:
+      enable: false
+      server-cert: ./certs/server.crt
+      server-key: ./certs/server.key
+      ca-cert: ./certs/ca.crt
+  # request timeout
+  timeout: 2s
+
+service:
+  cache:
+    user-ttl: 5m
+  session:
+    refresh-ttl: 168h 
+    access-ttl: 24h
+
+# server's secrets
+secrets:
+  postgres:
+    host: localhost
+    port: 5432
+    sslmode: disable
+    # authorization settings
+    auth:
+      user: ${POSTGRES_USER}
+      password: ${POSTGRES_PASSWORD}
+      dbname: ${POSTGRES_DBNAME}
+    # connection settings
+    conn:
+      max-opens: 15
+      max-idles: 30
+      max-lifetime: 15m
+      max-idletime: 30m
+  
+  redis:
+    host: localhost
+    port: 6379
+    auth:
+      username: ${REDIS_USERNAME}
+      password: ${REDIS_PASSWORD}
+      db: ${REDIS_DB}
+  
+  jwt:
+    private-key-path: ./jwtRS256.key
+    public-key-path: ./jwtRS256.key.pub
+  
