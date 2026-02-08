@@ -1,0 +1,32 @@
+# global enironment of this service
+env: dev
+
+# naming of this service
+app:
+  name: xvibe-auth-gateway
+  version: v0.0.1
+
+# settings of server
+server:
+  http:
+    host: localhost
+    port: 7070
+    # tls config
+    tls:
+      enable: true
+      server-cert: ./certs/server.crt
+      server-key: ./certs/server.key
+  read-timeout: 2s
+  write-timeout: 2s
+  idle-timeout: 30s
+
+# under-hood service settings
+services:
+  xvibe-auth:
+    host: localhost
+    port: 50050
+    mtls:
+      enable: true
+      client-cert: ./certs/client.crt
+      client-key: ./certs/client.key
+      ca-cert: ./certs/rootCA.pem
