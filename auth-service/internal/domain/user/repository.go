@@ -16,4 +16,5 @@ type UserRepository interface {
 type UserCache interface {
 	Save(ctx context.Context, user *User) error
 	Get(ctx context.Context, id uuid.UUID) (*User, error)
+	Del(ctx context.Context, id uuid.UUID) error
 }

@@ -60,6 +60,23 @@ func (uc *UserCache) Get(ctx context.Context, id uuid.UUID) (*user.User, error) 
 	return toDomain(bytes)
 }
 
+func (uc *UserCache) Del(ctx context.Context, id uuid.UUID) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+
+	key := uc.getKey(id)
+	if err := uc.client.Del(ctx, key).Err(); err != nil {
+		if errors.Is(err, redis.Nil) {
+			return consts.ErrUserDoesntExist
+		}
+
+		return err
+	}
+
+	return nil
+}
+
 func (uc *UserCache) getKey(id uuid.UUID) string {
 	return fmt.Sprintf("user:%s", id.String())
 }

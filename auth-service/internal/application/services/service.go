@@ -290,6 +290,7 @@ func (as *authService) Update(ctx context.Context, req *authpb.UpdateRequest) (*
 		return nil, status.Error(codes.Internal, consts.ErrInternalServer.Error())
 	}
 
+	go as.deleteUserCache(context.Background(), updatedUser.ID())
 	return as.returnUser(updatedUser), nil
 }
 
@@ -532,5 +533,17 @@ func (as *authService) returnUser(user *user.User) *authpb.User {
 		Username:  user.Username().Value(),
 		CreatedAt: timestamppb.New(user.CreatedAt()),
 		UpdatedAt: timestamppb.New(user.UpdatedAt()),
+	}
+}
+
+func (as *authService) deleteUserCache(ctx context.Context, id uuid.UUID) {
+	ctxTimeout, cancel := context.WithTimeout(ctx, as.cfg.Server.Timeout)
+	defer cancel()
+
+	if err := as.userCache.Del(ctxTimeout, id); err != nil {
+		as.log.Error("failed to delete user from cache by id",
+			slog.String("user_id", id.String()),
+			slog.String("error", err.Error()),
+		)
 	}
 }

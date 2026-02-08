@@ -1,5 +1,5 @@
 # global environment of this service
-env: prod
+env: dev
 
 # naming of this serivce
 app:
@@ -14,10 +14,10 @@ server:
     protocol: tcp
     # tls config
     tls:
-      enable: false
+      enable: true
       server-cert: ./certs/server.crt
       server-key: ./certs/server.key
-      ca-cert: ./certs/ca.crt
+      ca-cert: ./certs/rootCA.pem
   # request timeout
   timeout: 2s
 

@@ -7,6 +7,7 @@ import (
 	userpg "github.com/devathh/xvibe/auth-service/internal/infrastructure/persistence/postgres/user"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 func Connect(cfg *config.Config) (*gorm.DB, error) {
@@ -19,7 +20,11 @@ func Connect(cfg *config.Config) (*gorm.DB, error) {
 		cfg.Secrets.Postgres.Auth.DBName,
 	)
 
-	db, err := gorm.Open(postgres.Open(dsn))
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
+		Logger: logger.NewSlogLogger(nil, logger.Config{
+			LogLevel: logger.Silent,
+		}),
+	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to open connection with postgres: %w", err)
 	}
