@@ -1,0 +1,109 @@
+syntax="proto3";
+package chat.v1;
+option go_package = "github.com/devathh/xvibe/chat; chatpb";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+
+enum Type {
+    TYPE_UNKNOWN = 0;
+    TYPE_SELF = 1;
+    TYPE_GROUP = 2;
+}
+
+// Domain model of this service
+message ChatModel {
+    string id = 1;
+    string owner_id = 2;
+    string title = 3; // can be empty if typ == TYPE_SELF
+    Type typ = 4;
+
+    google.protobuf.Timestamp created_at = 5;
+}
+
+message ChatModels {
+    repeated ChatModel chats = 1;
+    google.protobuf.Timestamp timestamp = 2;
+}
+
+message Member {
+    string user_id = 1;
+    string firstname = 2;
+    string lastname = 3;
+    bool is_owner = 4;
+}
+
+message ChatWithMembers {
+    ChatModel chat = 1;
+    repeated Member member_ids = 2;
+    bool is_current_owner = 3;
+
+    google.protobuf.Timestamp timestamp = 4;
+}
+
+service Chat {
+    // Create a new chat
+    // REQUIRES: mtls connection with gateway
+    // METADATA: jwt-token of user
+    rpc Create(CreateRequest) returns (ChatModel);
+    // Delete the chat (soft-delete)
+    // REQUIRES: mtls connection with gateway
+    // METADATA: jwt-token of user (group can be deleted only by owner)
+    rpc Delete(DeleteRequest) returns (google.protobuf.Empty);
+
+    // Update the chat of group
+    // REQUIRES: mtls connection with gateway
+    // METADATA: jwt-token of user
+    rpc UpdateGroup(UpdateRequest) returns (ChatWithMembers);
+    // Add members into group
+    // REQUIRES: mtls connection with gateway
+    rpc AddMembers(MembersRequest) returns (ChatWithMembers);
+    // Delete members from group
+    // REQUIRES: mtls connection with gateway
+    rpc DeleteMembers(MembersRequest) returns (google.protobuf.Empty);
+
+    // Get all chats by jwt-token
+    // Returns up to 100 chats. No pagination needed in MVP.
+    // REQUIRES: mtls connection with gateway
+    // METADATA: jwt-token of user
+    rpc GetSelfChats(google.protobuf.Empty) returns (ChatModels);
+    // GetGroup with members
+    // REQUIRES: mtls connection with gateway
+    rpc GetChat(GetRequest) returns (ChatWithMembers);
+}
+
+message CreateGroup {
+    string title = 1;
+    repeated string member_ids = 2;
+}
+
+message CreateSelf {
+    // member_id must be different from the authenticated user's ID
+    string member_id = 1; // another member will be taken from token
+}
+
+message CreateRequest {
+    Type typ = 1;
+    oneof creates {
+        CreateGroup create_group = 2;
+        CreateSelf create_self = 3;
+    }
+}
+
+message UpdateRequest {
+    string chat_id = 1;
+    string title = 2;
+}
+
+message DeleteRequest {
+    string chat_id = 1;
+}
+
+message MembersRequest {
+    string chat_id = 1;
+    repeated string member_ids = 2;
+}
+
+message GetRequest {
+    string chat_id = 1;
+}

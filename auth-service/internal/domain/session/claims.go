@@ -7,8 +7,8 @@ import (
 
 type Claims struct {
 	jwt.RegisteredClaims
-	UserID uuid.UUID
-	Email  string
+	UserID uuid.UUID `json:"user_id"`
+	Email  string    `json:"email"`
 }
 
 type JwtManager interface {
