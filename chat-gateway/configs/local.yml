@@ -1,0 +1,32 @@
+# global environment of current service
+env: dev
+
+# naming of this gateway
+app:
+  name: xvibe-chat-gateway
+  version: v0.0.1
+
+# settings of runner of server
+server:
+  http:
+    host: localhost
+    port: 7081
+    tls:
+      enable: false
+      server-cert: ./certs/server.crt
+      server-key: ./certs/server.key
+      ca-cert: ./certs/rootCA.pem
+  read-timeout: 2s
+  write-timeout: 2s
+  idle-timeout: 30s
+
+# settings of connected services
+services:
+  xvibe-chat:
+    host: localhost
+    port: 50051
+    # settings of mtls connection
+    tls:
+      enable: true
+      client-cert: ./certs/client.crt
+      client-key: ./certs/client.key

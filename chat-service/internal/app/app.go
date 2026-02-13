@@ -16,11 +16,13 @@ import (
 	"github.com/devathh/xvibe/chat/internal/infrastructure/grpc/interceptors"
 	"github.com/devathh/xvibe/chat/internal/infrastructure/persistence/postgres"
 	chatpg "github.com/devathh/xvibe/chat/internal/infrastructure/persistence/postgres/chat"
+	"github.com/devathh/xvibe/chat/internal/infrastructure/security/mtls"
 	"github.com/devathh/xvibe/chat/internal/infrastructure/session/jwt"
 	"github.com/devathh/xvibe/chat/pkg/log"
 	"github.com/joho/godotenv"
 	redissdk "github.com/redis/go-redis/v9"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"gorm.io/gorm"
 )
 
@@ -95,7 +97,6 @@ func New() (*App, func(), error) {
 		}, nil
 }
 
-// TODO: mtls-connection
 func provideServer(cfg *config.Config, log *slog.Logger, chatRepo chat.ChatRepository, chatCacheRepo chat.ChatCacheRepository) (*grpc.Server, error) {
 	service := services.New(cfg, log, chatRepo, chatCacheRepo)
 	api := handlers.New(service)
@@ -113,9 +114,22 @@ func provideServer(cfg *config.Config, log *slog.Logger, chatRepo chat.ChatRepos
 		chatpb.Chat_GetChat_FullMethodName:      true,
 		chatpb.Chat_AddMembers_FullMethodName:   true,
 	})
-	grpcServer := grpc.NewServer(grpc.ChainUnaryInterceptor(
-		packInterceptors.AuthInterceptor(),
-	))
+
+	sOpts := []grpc.ServerOption{
+		grpc.ChainUnaryInterceptor(
+			packInterceptors.AuthInterceptor(),
+		),
+	}
+	if cfg.Server.GRPC.TLS.Enable {
+		tlsConfig, err := mtls.LoadMTLSConfig(cfg)
+		if err != nil {
+			return nil, err
+		}
+
+		sOpts = append(sOpts, grpc.Creds(credentials.NewTLS(tlsConfig)))
+	}
+
+	grpcServer := grpc.NewServer(sOpts...)
 	chatpb.RegisterChatServer(grpcServer, api)
 
 	return grpcServer, nil

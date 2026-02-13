@@ -7,4 +7,3 @@ mkcertlocal:
 	mv ./server.crt ./certs/
 	mv localhost+1-key.pem server.key 
 	mv ./server.key ./certs/
- 

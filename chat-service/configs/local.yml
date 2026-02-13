@@ -15,9 +15,9 @@ server:
     # tls config
     tls:
       enable: false
-      server-cert: ./
-      server-key: ./
-      ca-cert: ./
+      server-cert: ./certs/server.crt
+      server-key: ./certs/server.key
+      ca-cert: ./certs/rootCA.pem
   # request's timeout
   timeout: 2s
 

@@ -528,10 +528,11 @@ func (c *chatService) returnChats(chats []*chat.ChatModel) *chatpb.ChatModels {
 	}
 	for idx, chat := range chats {
 		response.Chats[idx] = &chatpb.ChatModel{
-			Id:      chat.ID().String(),
-			OwnerId: chat.OwnerID().String(),
-			Title:   chat.Title(),
-			Typ:     chatpb.Type(chat.Type().Value()),
+			Id:        chat.ID().String(),
+			OwnerId:   chat.OwnerID().String(),
+			Title:     chat.Title(),
+			Typ:       chatpb.Type(chat.Type().Value()),
+			CreatedAt: timestamppb.New(chat.CreatedAt()),
 		}
 	}
 
