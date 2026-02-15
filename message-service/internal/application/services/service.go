@@ -223,9 +223,12 @@ func (ms *messageService) GetHistory(ctx context.Context, req *messagepb.GetRequ
 		return nil, status.Error(codes.InvalidArgument, consts.ErrInvalidChatID.Error())
 	}
 
-	msgID, err := uuid.Parse(req.BeforeId)
-	if err != nil {
-		return nil, status.Error(codes.InvalidArgument, consts.ErrInvalidMsgID.Error())
+	msgID := uuid.Nil
+	if req.BeforeId != "" {
+		msgID, err = uuid.Parse(req.BeforeId)
+		if err != nil {
+			return nil, status.Error(codes.InvalidArgument, consts.ErrInvalidMsgID.Error())
+		}
 	}
 
 	ctxTimeout, cancel := context.WithTimeout(ctx, ms.cfg.Server.Timeout)

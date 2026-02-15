@@ -1,0 +1,36 @@
+# global environment of current service
+env: dev  
+
+# naming of current service
+app:
+  name: xvibe-message-gateway
+  version: v0.0.1
+
+# settings of server's runner
+server:
+  http:
+    host: localhost
+    port: 7082
+    # tls config
+    tls:
+      enable: true
+      server-cert: ./certs/server.crt
+      server-key: ./certs/server.key
+  ws:
+    host: localhost
+    port: 7083
+  read-timeout: 2s
+  write-timeout: 2s
+  idle-timeout: 30s
+
+# dependencies
+services:
+  xvibe-message:
+    host: localhost
+    port: 50052
+    # mtls config
+    tls: 
+      enable: false
+      client-cert: ./certs/client.crt
+      client-key: ./certs/client.key
+      ca-cert: ./certs/rootCA.pem
