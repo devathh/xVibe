@@ -6,13 +6,14 @@ import (
 	"github.com/google/uuid"
 )
 
-func toModelChatModel(domain *chat.ChatModel) *ChatModel {
+func toModelChatModel(domain *chat.ChatModel, wrappedDEK []byte) *ChatModel {
 	return &ChatModel{
-		ID:        domain.ID(),
-		OwnerID:   domain.OwnerID(),
-		Title:     domain.Title(),
-		TypeID:    int(domain.Type().Value()),
-		CreatedAt: domain.CreatedAt(),
+		ID:         domain.ID(),
+		OwnerID:    domain.OwnerID(),
+		Title:      domain.Title(),
+		TypeID:     int(domain.Type().Value()),
+		WrappedDEK: wrappedDEK,
+		CreatedAt:  domain.CreatedAt(),
 	}
 }
 

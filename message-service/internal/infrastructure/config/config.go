@@ -16,26 +16,23 @@ var (
 	ErrAppInvalidVersion = errors.New("invalid version of service")
 
 	// Server's
-	ErrServerInvalidServerCert = errors.New("invalid path to server cert")
-	ErrServerInvalidServerKey  = errors.New("invalid path to server key")
-	ErrServerInvalidCaCert     = errors.New("invalid path to ca cert")
-	ErrServerTooLittleTimeout  = errors.New("too little timeout")
+	ErrServerInvalidCert      = errors.New("invalid path to server cert")
+	ErrServerInvalidKey       = errors.New("invalid path to server key")
+	ErrServerInvalidCaCert    = errors.New("invalid ca cert")
+	ErrServerTooLittleRequest = errors.New("too little timeout of request")
 
-	// Postgres's
+	// Cipher's
+	ErrCipherTooLittleNonce = errors.New("too little size of nonce")
+
+	// Postgres
 	ErrPostgresInvalidUser       = errors.New("invalid user")
 	ErrPostgresInvalidPassword   = errors.New("invalid password")
-	ErrPostgresInvalidDBName     = errors.New("invalid dbname")
-	ErrPostgresTooLittleLifetime = errors.New("too little lifetime of conn")
-	ErrPostgresTooLittleIdleTime = errors.New("too little idle time of conn")
+	ErrPostgresInvalidDBName     = errors.New("invalid name of db")
+	ErrPostgresTooLittleLifetime = errors.New("too little lifetime")
+	ErrPostgresTooLittleIdleTime = errors.New("too little idle time")
 
-	// Cache's
-	ErrCacheTooLittleChatsTTL = errors.New("too little chat's ttl")
-
-	// Jwt's
+	// JWT's
 	ErrJWTInvalidPublicKeyPath = errors.New("invalid path to public key")
-
-	// Cipher
-	ErrCipherInvalidNonceSize = errors.New("too little size of nonce (aes-gcm)")
 
 	// General's
 	ErrInvalidPath = errors.New("invalid path to config file")
@@ -61,12 +58,11 @@ func (a *app) validate() error {
 	return nil
 }
 
-// settings of server's runner
 type server struct {
 	GRPC struct {
-		Host     string `yaml:"host"`
-		Port     int    `yaml:"port"`
-		Protocol string `yaml:"protocol"`
+		Host     string `yaml:"host"`     // by def: localhost
+		Port     int    `yaml:"port"`     // by def: 50052
+		Protocol string `yaml:"protocol"` // by def: tcp
 		TLS      struct {
 			Enable     bool   `yaml:"enable"`
 			ServerCert string `yaml:"server-cert"`
@@ -77,14 +73,14 @@ type server struct {
 	Timeout time.Duration `yaml:"timeout"`
 }
 
-func (s *server) applyDefaults() {
+func (s *server) applyDef() {
 	s.GRPC.Host = strings.TrimSpace(s.GRPC.Host)
 	if s.GRPC.Host == "" {
 		s.GRPC.Host = "localhost"
 	}
 
 	if s.GRPC.Port <= 0 || s.GRPC.Port > 65535 {
-		s.GRPC.Port = 50051
+		s.GRPC.Port = 50052
 	}
 
 	s.GRPC.Protocol = strings.TrimSpace(s.GRPC.Protocol)
@@ -97,12 +93,12 @@ func (s *server) validate() error {
 	if s.GRPC.TLS.Enable {
 		s.GRPC.TLS.ServerCert = strings.TrimSpace(s.GRPC.TLS.ServerCert)
 		if s.GRPC.TLS.ServerCert == "" {
-			return ErrServerInvalidServerCert
+			return ErrServerInvalidCert
 		}
 
 		s.GRPC.TLS.ServerKey = strings.TrimSpace(s.GRPC.TLS.ServerKey)
 		if s.GRPC.TLS.ServerKey == "" {
-			return ErrServerInvalidServerKey
+			return ErrServerInvalidKey
 		}
 
 		s.GRPC.TLS.CaCert = strings.TrimSpace(s.GRPC.TLS.CaCert)
@@ -112,30 +108,42 @@ func (s *server) validate() error {
 	}
 
 	if s.Timeout < 100*time.Millisecond {
-		return ErrServerTooLittleTimeout
+		return ErrServerTooLittleRequest
+	}
+
+	return nil
+}
+
+type cipher struct {
+	NonceSize int `yaml:"nonce-size"`
+}
+
+func (c *cipher) validate() error {
+	if c.NonceSize <= 0 {
+		return ErrCipherTooLittleNonce
 	}
 
 	return nil
 }
 
 type postgres struct {
-	Host    string `yaml:"host"`
-	Port    int    `yaml:"port"`
-	SSLMode string `yaml:"sslmode"`
+	Host    string `yaml:"host"`    // by def: localhost
+	Port    int    `yaml:"port"`    // by def: 5432
+	SSLMode string `yaml:"sslmode"` // by def: disable
 	Auth    struct {
 		User     string `yaml:"user"`
 		Password string `yaml:"password"`
 		DBName   string `yaml:"dbname"`
 	} `yaml:"auth"`
 	Conn struct {
-		MaxIdles    int           `yaml:"max-idles"`
-		MaxOpens    int           `yaml:"max-opens"`
+		MaxIdles    int           `yaml:"max-idles"` // by def: 1
+		MaxOpens    int           `yaml:"max-opens"` // by def: 1
 		MaxLifetime time.Duration `yaml:"max-lifetime"`
 		MaxIdleTime time.Duration `yaml:"max-idle-time"`
 	} `yaml:"conn"`
 }
 
-func (pg *postgres) applyDefaults() {
+func (pg *postgres) applyDef() {
 	pg.Host = strings.TrimSpace(pg.Host)
 	if pg.Host == "" {
 		pg.Host = "localhost"
@@ -150,14 +158,12 @@ func (pg *postgres) applyDefaults() {
 		pg.SSLMode = "disable"
 	}
 
-	if pg.Conn.MaxIdles <= 0 {
-		pg.Conn.MaxIdles = 1
-	}
-	if pg.Conn.MaxOpens <= 0 {
-		pg.Conn.MaxOpens = 1
-	}
+	pg.Conn.MaxIdles = max(pg.Conn.MaxIdles, 1)
+	pg.Conn.MaxOpens = max(pg.Conn.MaxOpens, 1)
 }
 
+// The validation of password, db and user
+// will be while creating connection with postgres
 func (pg *postgres) validate() error {
 	pg.Auth.User = strings.TrimSpace(pg.Auth.User)
 	if pg.Auth.User == "" {
@@ -174,11 +180,11 @@ func (pg *postgres) validate() error {
 		return ErrPostgresInvalidDBName
 	}
 
-	if pg.Conn.MaxLifetime < time.Minute {
+	if pg.Conn.MaxLifetime < time.Second {
 		return ErrPostgresTooLittleLifetime
 	}
 
-	if pg.Conn.MaxIdleTime < time.Minute {
+	if pg.Conn.MaxIdleTime < time.Second {
 		return ErrPostgresTooLittleIdleTime
 	}
 
@@ -186,8 +192,8 @@ func (pg *postgres) validate() error {
 }
 
 type redis struct {
-	Host string `yaml:"host"`
-	Port int    `yaml:"port"`
+	Host string `yaml:"host"` // by def: localhost
+	Port int    `yaml:"port"` // by def: 6379
 	Auth struct {
 		Username string `yaml:"username"`
 		Password string `yaml:"password"`
@@ -195,7 +201,7 @@ type redis struct {
 	} `yaml:"auth"`
 }
 
-func (r *redis) applyDefaults() {
+func (r *redis) applyDef() {
 	r.Host = strings.TrimSpace(r.Host)
 	if r.Host == "" {
 		r.Host = "localhost"
@@ -204,18 +210,6 @@ func (r *redis) applyDefaults() {
 	if r.Port <= 0 || r.Port > 65535 {
 		r.Port = 6379
 	}
-}
-
-type cache struct {
-	ChatsTTL time.Duration `yaml:"chats-ttl"`
-}
-
-func (c *cache) validate() error {
-	if c.ChatsTTL < 100*time.Millisecond {
-		return ErrCacheTooLittleChatsTTL
-	}
-
-	return nil
 }
 
 type jwt struct {
@@ -231,34 +225,19 @@ func (j *jwt) validate() error {
 	return nil
 }
 
-type cipher struct {
-	NonceSize int `yaml:"nonce-size"`
-}
-
-func (c *cipher) validate() error {
-	if c.NonceSize <= 0 {
-		return ErrCipherInvalidNonceSize
-	}
-
-	return nil
-}
-
 type Config struct {
 	Env     string `yaml:"env"`
 	App     app    `yaml:"app"`
 	Server  server `yaml:"server"`
-	Service struct {
-		Cache cache `yaml:"cache"`
-	} `yaml:"service"`
 	Secrets struct {
+		Cipher   cipher   `yaml:"cipher"`
 		Postgres postgres `yaml:"postgres"`
 		Redis    redis    `yaml:"redis"`
 		JWT      jwt      `yaml:"jwt"`
-		Cipher   cipher   `yaml:"cipher"`
 	} `yaml:"secrets"`
 }
 
-// parse config file
+// load config
 // .env must be loaded
 func New(filepath string) (*Config, error) {
 	filepath = strings.TrimSpace(filepath)
@@ -274,7 +253,7 @@ func New(filepath string) (*Config, error) {
 
 	var cfg Config
 	if err := yaml.Unmarshal(bytes, &cfg); err != nil {
-		return nil, fmt.Errorf("failed to parse config file: %w", err)
+		return nil, fmt.Errorf("failed to unmarshal config file: %w", err)
 	}
 
 	cfg.Env = strings.TrimSpace(cfg.Env)
@@ -282,10 +261,9 @@ func New(filepath string) (*Config, error) {
 		cfg.Env = "dev"
 	}
 
-	// Apply all fields by default
-	cfg.Server.applyDefaults()
-	cfg.Secrets.Postgres.applyDefaults()
-	cfg.Secrets.Redis.applyDefaults()
+	cfg.Server.applyDef()
+	cfg.Secrets.Postgres.applyDef()
+	cfg.Secrets.Redis.applyDef()
 
 	if err := cfg.validate(); err != nil {
 		return nil, err
@@ -299,16 +277,13 @@ func (c *Config) validate() error {
 		return fmt.Errorf("invalid app: %w", err)
 	}
 	if err := c.Server.validate(); err != nil {
-		return fmt.Errorf("invalid server: %w", err)
-	}
-	if err := c.Secrets.Postgres.validate(); err != nil {
-		return fmt.Errorf("invalid postgres: %w", err)
-	}
-	if err := c.Service.Cache.validate(); err != nil {
-		return fmt.Errorf("invalid cache: %w", err)
+		return fmt.Errorf("invalid app: %w", err)
 	}
 	if err := c.Secrets.Cipher.validate(); err != nil {
 		return fmt.Errorf("invalid cipher: %w", err)
+	}
+	if err := c.Secrets.Postgres.validate(); err != nil {
+		return fmt.Errorf("invalid postgres: %w", err)
 	}
 
 	return nil

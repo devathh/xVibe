@@ -1,0 +1,65 @@
+syntax="proto3";
+package message.v1;
+option go_package="github.com/devathh/xvibe/message; messagepb";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+
+// Domain model of this service
+message MessageModel {
+    string id = 1;
+    string chat_id = 2;
+    string author_id = 3;
+    string body = 4;
+
+    google.protobuf.Timestamp sent_at = 5;
+
+    reserved 6 to 10;
+}
+
+message MessageModels {
+    repeated MessageModel messages = 1;
+    bool has_more = 2;
+}
+
+service Message {
+    // Create new message in chat
+    // REQUIRES: mtls-connection
+    // METADATA: jwt-token (authorization)
+    rpc CreateMessage(CreateRequest) returns (MessageModel);
+    // Delete the message from chat
+    // REQUIRES: mtls-connection
+    // METADATA: jwt-token
+    rpc DeleteMessage(DeleteRequest) returns (google.protobuf.Empty);
+
+    // Connect to stream 
+    // to get new messages in real-time
+    // (messages will be taken from sub/pub redis)
+    // REQUIRES: mtls-connection
+    // METADATA: jwt-token (to check including current chat)
+    rpc ConnectNewMessages(ConnectRequest) returns (stream MessageModel);
+    // Get history of messages
+    // By offset
+    // REQUIRES: mtls-connection
+    // METADATA: jwt-token (to check including current chat)
+    rpc GetHistory(GetRequest) returns (MessageModels);
+}
+
+message CreateRequest {
+    string chat_id = 1;
+    string body = 2;
+}
+
+message DeleteRequest {
+    string msg_id = 1;
+}
+
+message ConnectRequest {
+    string chat_id = 1;
+}
+
+message GetRequest {
+    string chat_id = 1;
+    uint32 limit = 2;
+    string before_id = 3;
+}

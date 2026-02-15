@@ -23,6 +23,7 @@ type ChatRepository interface {
 		ctx context.Context,
 		chat *ChatModel,
 		memberIds []uuid.UUID,
+		wrappedDEK []byte,
 	) (*ChatModel, error)
 
 	Delete(

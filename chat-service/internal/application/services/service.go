@@ -2,11 +2,13 @@ package services
 
 import (
 	"context"
+	"crypto/rand"
 	"errors"
 	"log/slog"
 
 	chatpb "github.com/devathh/xvibe/chat/api/chat/v1"
 	"github.com/devathh/xvibe/chat/internal/domain/chat"
+	"github.com/devathh/xvibe/chat/internal/domain/crypto"
 	"github.com/devathh/xvibe/chat/internal/domain/member"
 	"github.com/devathh/xvibe/chat/internal/domain/session"
 	"github.com/devathh/xvibe/chat/internal/infrastructure/config"
@@ -33,6 +35,7 @@ type chatService struct {
 	log       *slog.Logger
 	chatRepo  chat.ChatRepository
 	chatCache chat.ChatCacheRepository
+	cryptoDEK crypto.WrapperDEK
 }
 
 func New(
@@ -40,12 +43,14 @@ func New(
 	log *slog.Logger,
 	chatRepo chat.ChatRepository,
 	chatCache chat.ChatCacheRepository,
+	cryptoDEK crypto.WrapperDEK,
 ) ChatService {
 	return &chatService{
 		cfg:       cfg,
 		log:       log,
 		chatRepo:  chatRepo,
 		chatCache: chatCache,
+		cryptoDEK: cryptoDEK,
 	}
 }
 
@@ -133,6 +138,19 @@ func (c *chatService) Create(ctx context.Context, req *chatpb.CreateRequest) (*c
 		return nil, status.Error(codes.Canceled, err.Error())
 	}
 
+	dek := make([]byte, 32)
+	if _, err := rand.Read(dek); err != nil {
+		c.log.Error("failed to generate dek", slog.String("error", err.Error()))
+		return nil, status.Error(codes.Internal, consts.ErrInternalServer.Error())
+	}
+
+	// FIXME: change hardcode KEK to KMS
+	wrappedDEK, err := c.cryptoDEK.WrapDEK(dek, []byte("4af1ecd1f5f734471fb942f7078c8786"))
+	if err != nil {
+		c.log.Error("failed to wrap dek", slog.String("error", err.Error()))
+		return nil, status.Error(codes.Internal, consts.ErrInternalServer.Error())
+	}
+
 	userID, err := c.getUserID(ctx)
 	if err != nil {
 		return nil, status.Error(codes.Unauthenticated, err.Error())
@@ -146,7 +164,7 @@ func (c *chatService) Create(ctx context.Context, req *chatpb.CreateRequest) (*c
 	ctxTimeout, cancel := context.WithTimeout(ctx, c.cfg.Server.Timeout)
 	defer cancel()
 
-	savedChat, err := c.chatRepo.Save(ctxTimeout, chat, members)
+	savedChat, err := c.chatRepo.Save(ctxTimeout, chat, members, wrappedDEK)
 	if err != nil {
 		if errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled) {
 			return nil, status.Error(codes.DeadlineExceeded, err.Error())

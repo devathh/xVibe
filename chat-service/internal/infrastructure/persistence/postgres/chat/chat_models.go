@@ -8,12 +8,13 @@ import (
 )
 
 type ChatModel struct {
-	ID        uuid.UUID `gorm:"id"`
-	OwnerID   uuid.UUID `gorm:"not null"`
-	Title     string
-	TypeID    int
-	CreatedAt time.Time
-	DeletedAt gorm.DeletedAt
+	ID         uuid.UUID `gorm:"id"`
+	OwnerID    uuid.UUID `gorm:"not null"`
+	Title      string
+	TypeID     int
+	WrappedDEK []byte `gorm:"not null;type:bytea"`
+	CreatedAt  time.Time
+	DeletedAt  gorm.DeletedAt
 }
 
 type ChatMembers struct {

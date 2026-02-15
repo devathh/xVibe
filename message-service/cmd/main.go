@@ -1,21 +1,15 @@
 package main
 
 import (
-	"context"
-	"errors"
-	"fmt"
 	"log/slog"
-	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 
-	"github.com/devathh/xvibe/chat-gateway/internal/app"
-	"github.com/google/uuid"
+	"github.com/devathh/xvibe/message-service/internal/app"
 )
 
 func main() {
-	fmt.Println(uuid.NewV7())
 	app, cleanup, err := app.New()
 	if err != nil {
 		slog.Error("failed to create app", slog.String("error", err.Error()))
@@ -24,7 +18,7 @@ func main() {
 	defer cleanup()
 
 	go func() {
-		if err := app.Start(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		if err := app.Start(); err != nil {
 			slog.Error("failed to start server", slog.String("error", err.Error()))
 		}
 	}()
@@ -33,7 +27,5 @@ func main() {
 	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
 	<-stop
 
-	if err := app.Shutdown(context.Background()); err != nil {
-		slog.Error("failed to shutdown server", slog.String("error", err.Error()))
-	}
+	app.GracefulShutdown()
 }

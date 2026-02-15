@@ -29,12 +29,13 @@ func (cr *ChatRepository) Save(
 	ctx context.Context,
 	chat *chat.ChatModel,
 	memberIds []uuid.UUID,
+	wrappedDEK []byte,
 ) (*chat.ChatModel, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
 
-	model := toModelChatModel(chat)
+	model := toModelChatModel(chat, wrappedDEK)
 	members := toModelMembers(memberIds, chat.ID())
 
 	if err := cr.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {

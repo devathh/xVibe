@@ -1,18 +1,18 @@
-# global environment
+# global enironment of current service
 env: dev
 
 # naming of current service
 app:
-  name: xvibe-chat-service
+  name: xvibe-message-service
   version: v0.0.1
 
 # settings of server's runner
 server:
   grpc:
     host: 0.0.0.0
-    port: 50051
+    port: 50052
     protocol: tcp
-    # tls config
+    # settings of tls
     tls:
       enable: false
       server-cert: ./certs/server.crt
@@ -21,13 +21,11 @@ server:
   # request's timeout
   timeout: 2s
 
-# service's settings (ex. cache ttl)
-service:
-  cache:
-    chats-ttl: 5m
-
-# secrets is taken from .env
+# secrets
 secrets:
+  cipher:
+    nonce-size: 12
+  
   postgres:
     host: localhost
     port: 5432
@@ -37,9 +35,9 @@ secrets:
       password: ${POSTGRES_PASSWORD}
       dbname: ${POSTGRES_DBNAME}
     conn:
-      max-idles: 30
-      max-opens: 15
-      max-lifetime: 15m
+      max-idles: 15
+      max-opens: 5
+      max-lifetime: 5m
       max-idle-time: 30m
   
   redis:
@@ -49,10 +47,6 @@ secrets:
       username: ${REDIS_USERNAME}
       password: ${REDIS_PASSWORD}
       db: ${REDIS_DB}
-
+    
   jwt:
     public-key-path: ./jwtRS256.key.pub
-  
-  cipher:
-    nonce-size: 12
-    

@@ -16,6 +16,7 @@ import (
 	"github.com/devathh/xvibe/chat/internal/infrastructure/grpc/interceptors"
 	"github.com/devathh/xvibe/chat/internal/infrastructure/persistence/postgres"
 	chatpg "github.com/devathh/xvibe/chat/internal/infrastructure/persistence/postgres/chat"
+	"github.com/devathh/xvibe/chat/internal/infrastructure/security/crypto"
 	"github.com/devathh/xvibe/chat/internal/infrastructure/security/mtls"
 	"github.com/devathh/xvibe/chat/internal/infrastructure/session/jwt"
 	"github.com/devathh/xvibe/chat/pkg/log"
@@ -98,7 +99,8 @@ func New() (*App, func(), error) {
 }
 
 func provideServer(cfg *config.Config, log *slog.Logger, chatRepo chat.ChatRepository, chatCacheRepo chat.ChatCacheRepository) (*grpc.Server, error) {
-	service := services.New(cfg, log, chatRepo, chatCacheRepo)
+	wrapperDEK := crypto.New(cfg)
+	service := services.New(cfg, log, chatRepo, chatCacheRepo, wrapperDEK)
 	api := handlers.New(service)
 
 	jwtMngr, err := jwt.New(cfg)
