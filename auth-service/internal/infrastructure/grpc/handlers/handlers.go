@@ -95,6 +95,19 @@ func (sapi *ServerAPI) GetUserByID(ctx context.Context, req *authpb.GetByIDReque
 	return resp, nil
 }
 
+func (sapi *ServerAPI) GetUsersByUsername(ctx context.Context, req *authpb.GetByUsernameRequest) (*authpb.Users, error) {
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "request cannot be empty")
+	}
+
+	resp, err := sapi.service.GetUsersByUsername(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}
+
 func (sapi *ServerAPI) LogoutAll(ctx context.Context, _ *emptypb.Empty) (*emptypb.Empty, error) {
 	if err := sapi.service.LogoutAll(ctx); err != nil {
 		return nil, err

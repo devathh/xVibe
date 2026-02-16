@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/devathh/xvibe/auth-service/internal/domain/user"
 	"github.com/devathh/xvibe/auth-service/pkg/consts"
@@ -83,6 +84,33 @@ func (ur *UserRepository) GetByID(ctx context.Context, id uuid.UUID) (*user.User
 	}
 
 	return toDomain(&model), nil
+}
+
+func (ur *UserRepository) GetByUsername(ctx context.Context, like string) ([]*user.User, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+
+	like = strings.TrimSpace(like)
+	if like == "" {
+		return nil, consts.ErrInvalidUsername
+	}
+
+	var models []UserModel
+	if err := ur.db.WithContext(ctx).Limit(100).Where("username ILIKE ?", "%"+like+"%").Find(&models).Error; err != nil {
+		if errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled) {
+			return nil, err
+		}
+
+		return nil, fmt.Errorf("failed to get users like username: %w", err)
+	}
+
+	users := make([]*user.User, len(models))
+	for idx, user := range models {
+		users[idx] = toDomain(&user)
+	}
+
+	return users, nil
 }
 
 func (ur *UserRepository) Update(ctx context.Context, updUser *user.User, mask []string) (*user.User, error) {

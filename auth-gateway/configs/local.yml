@@ -10,7 +10,7 @@ app:
 server:
   http:
     host: localhost
-    port: 7070
+    port: 7080
     # tls config
     tls:
       enable: true

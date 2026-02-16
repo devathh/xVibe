@@ -20,6 +20,10 @@ message User {
     reserved 8 to 15;
 }
 
+message Users {
+    repeated User users = 1;
+}
+
 // Domain model of session
 message Token {
     string access = 1;
@@ -60,6 +64,10 @@ service Auth {
     // Get user by id
     // REQUIRES: mtls connection with gateway
     rpc GetUserByID(GetByIDRequest) returns (User);
+    // Get all users, where username like
+    // with limit
+    // REQUIRES: mtls connection with gateway
+    rpc GetUsersByUsername(GetByUsernameRequest) returns (Users);
 }
 
 message Updates {
@@ -92,4 +100,8 @@ message RefreshRequest {
 
 message GetByIDRequest {
     string id = 1;
+}
+
+message GetByUsernameRequest {
+    string username = 1;
 }

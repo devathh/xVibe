@@ -24,6 +24,7 @@ type AuthService interface {
 	Update(ctx context.Context, req *authpb.UpdateRequest) (*authpb.User, error)
 	GetSelf(ctx context.Context) (*authpb.User, error)
 	GetUserByID(ctx context.Context, req *authpb.GetByIDRequest) (*authpb.User, error)
+	GetUsersByUsername(ctx context.Context, req *authpb.GetByUsernameRequest) (*authpb.Users, error)
 	LogoutAll(ctx context.Context) error
 }
 
@@ -378,6 +379,44 @@ func (as *authService) GetUserByID(ctx context.Context, req *authpb.GetByIDReque
 
 	go as.saveUserCache(context.Background(), user)
 	return as.returnUser(user), nil
+}
+
+// Find all users, where username like request
+// (limit: 100)
+func (as *authService) GetUsersByUsername(ctx context.Context, req *authpb.GetByUsernameRequest) (*authpb.Users, error) {
+	ctxTimeout, cancel := context.WithTimeout(ctx, as.cfg.Server.Timeout)
+	defer cancel()
+
+	users, err := as.userRepo.GetByUsername(ctxTimeout, req.Username)
+	if err != nil {
+		if errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled) {
+			return nil, status.Error(codes.DeadlineExceeded, err.Error())
+		}
+
+		if errors.Is(err, consts.ErrInvalidUsername) {
+			return nil, status.Error(codes.InvalidArgument, err.Error())
+		}
+
+		as.log.Error("failed to get users by username", slog.String("error", err.Error()))
+		return nil, status.Error(codes.Internal, consts.ErrInternalServer.Error())
+	}
+
+	response := authpb.Users{
+		Users: make([]*authpb.User, len(users)),
+	}
+	for idx, user := range users {
+		response.Users[idx] = &authpb.User{
+			Id:        user.ID().String(),
+			Email:     user.Email().Value(),
+			Firstname: user.Firstname(),
+			Lastname:  user.Lastname(),
+			Username:  user.Username().Value(),
+			CreatedAt: timestamppb.New(user.CreatedAt()),
+			UpdatedAt: timestamppb.New(user.UpdatedAt()),
+		}
+	}
+
+	return &response, nil
 }
 
 // Clear all user's sessions

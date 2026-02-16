@@ -8,7 +8,6 @@ package authpb
 
 import (
 	context "context"
-
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -21,13 +20,14 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Auth_Register_FullMethodName    = "/auth.v1.Auth/Register"
-	Auth_Login_FullMethodName       = "/auth.v1.Auth/Login"
-	Auth_Refresh_FullMethodName     = "/auth.v1.Auth/Refresh"
-	Auth_Update_FullMethodName      = "/auth.v1.Auth/Update"
-	Auth_LogoutAll_FullMethodName   = "/auth.v1.Auth/LogoutAll"
-	Auth_GetSelf_FullMethodName     = "/auth.v1.Auth/GetSelf"
-	Auth_GetUserByID_FullMethodName = "/auth.v1.Auth/GetUserByID"
+	Auth_Register_FullMethodName           = "/auth.v1.Auth/Register"
+	Auth_Login_FullMethodName              = "/auth.v1.Auth/Login"
+	Auth_Refresh_FullMethodName            = "/auth.v1.Auth/Refresh"
+	Auth_Update_FullMethodName             = "/auth.v1.Auth/Update"
+	Auth_LogoutAll_FullMethodName          = "/auth.v1.Auth/LogoutAll"
+	Auth_GetSelf_FullMethodName            = "/auth.v1.Auth/GetSelf"
+	Auth_GetUserByID_FullMethodName        = "/auth.v1.Auth/GetUserByID"
+	Auth_GetUsersByUsername_FullMethodName = "/auth.v1.Auth/GetUsersByUsername"
 )
 
 // AuthClient is the client API for Auth service.
@@ -62,6 +62,10 @@ type AuthClient interface {
 	// Get user by id
 	// REQUIRES: mtls connection with gateway
 	GetUserByID(ctx context.Context, in *GetByIDRequest, opts ...grpc.CallOption) (*User, error)
+	// Get all users, where username like
+	// with limit
+	// REQUIRES: mtls connection with gateway
+	GetUsersByUsername(ctx context.Context, in *GetByUsernameRequest, opts ...grpc.CallOption) (*Users, error)
 }
 
 type authClient struct {
@@ -142,6 +146,16 @@ func (c *authClient) GetUserByID(ctx context.Context, in *GetByIDRequest, opts .
 	return out, nil
 }
 
+func (c *authClient) GetUsersByUsername(ctx context.Context, in *GetByUsernameRequest, opts ...grpc.CallOption) (*Users, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Users)
+	err := c.cc.Invoke(ctx, Auth_GetUsersByUsername_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AuthServer is the server API for Auth service.
 // All implementations must embed UnimplementedAuthServer
 // for forward compatibility.
@@ -174,6 +188,10 @@ type AuthServer interface {
 	// Get user by id
 	// REQUIRES: mtls connection with gateway
 	GetUserByID(context.Context, *GetByIDRequest) (*User, error)
+	// Get all users, where username like
+	// with limit
+	// REQUIRES: mtls connection with gateway
+	GetUsersByUsername(context.Context, *GetByUsernameRequest) (*Users, error)
 	mustEmbedUnimplementedAuthServer()
 }
 
@@ -204,6 +222,9 @@ func (UnimplementedAuthServer) GetSelf(context.Context, *emptypb.Empty) (*User, 
 }
 func (UnimplementedAuthServer) GetUserByID(context.Context, *GetByIDRequest) (*User, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetUserByID not implemented")
+}
+func (UnimplementedAuthServer) GetUsersByUsername(context.Context, *GetByUsernameRequest) (*Users, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetUsersByUsername not implemented")
 }
 func (UnimplementedAuthServer) mustEmbedUnimplementedAuthServer() {}
 func (UnimplementedAuthServer) testEmbeddedByValue()              {}
@@ -352,6 +373,24 @@ func _Auth_GetUserByID_Handler(srv interface{}, ctx context.Context, dec func(in
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Auth_GetUsersByUsername_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetByUsernameRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServer).GetUsersByUsername(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Auth_GetUsersByUsername_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServer).GetUsersByUsername(ctx, req.(*GetByUsernameRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Auth_ServiceDesc is the grpc.ServiceDesc for Auth service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -386,6 +425,10 @@ var Auth_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetUserByID",
 			Handler:    _Auth_GetUserByID_Handler,
+		},
+		{
+			MethodName: "GetUsersByUsername",
+			Handler:    _Auth_GetUsersByUsername_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

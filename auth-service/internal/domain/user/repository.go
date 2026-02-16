@@ -10,6 +10,7 @@ type UserRepository interface {
 	Save(ctx context.Context, user *User) (*User, error)
 	GetByEmail(ctx context.Context, email Email) (*User, error)
 	GetByID(ctx context.Context, id uuid.UUID) (*User, error)
+	GetByUsername(ctx context.Context, like string) ([]*User, error)
 	Update(ctx context.Context, updUser *User, mask []string) (*User, error)
 }
 
