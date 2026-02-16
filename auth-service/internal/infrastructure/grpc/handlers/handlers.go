@@ -108,6 +108,15 @@ func (sapi *ServerAPI) GetUsersByUsername(ctx context.Context, req *authpb.GetBy
 	return resp, nil
 }
 
+func (sapi *ServerAPI) GetPublicKey(ctx context.Context, _ *emptypb.Empty) (*authpb.PublicKey, error) {
+	resp, err := sapi.service.GetPublicKey(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}
+
 func (sapi *ServerAPI) LogoutAll(ctx context.Context, _ *emptypb.Empty) (*emptypb.Empty, error) {
 	if err := sapi.service.LogoutAll(ctx); err != nil {
 		return nil, err

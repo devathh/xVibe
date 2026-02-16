@@ -1,19 +1,24 @@
 package app
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"os"
 
+	authpb "github.com/devathh/xvibe/chat/api/auth/v1"
 	chatpb "github.com/devathh/xvibe/chat/api/chat/v1"
 	"github.com/devathh/xvibe/chat/internal/application/services"
 	"github.com/devathh/xvibe/chat/internal/domain/chat"
 	"github.com/devathh/xvibe/chat/internal/infrastructure/cache/redis"
 	chatredis "github.com/devathh/xvibe/chat/internal/infrastructure/cache/redis/chat"
 	"github.com/devathh/xvibe/chat/internal/infrastructure/config"
-	grpcserver "github.com/devathh/xvibe/chat/internal/infrastructure/grpc"
-	"github.com/devathh/xvibe/chat/internal/infrastructure/grpc/handlers"
-	"github.com/devathh/xvibe/chat/internal/infrastructure/grpc/interceptors"
+	grpcserver "github.com/devathh/xvibe/chat/internal/infrastructure/grpc/server"
+	"github.com/devathh/xvibe/chat/internal/infrastructure/grpc/server/handlers"
+	"github.com/devathh/xvibe/chat/internal/infrastructure/grpc/server/interceptors"
+	"github.com/devathh/xvibe/chat/internal/infrastructure/grpc/xvibe"
+
+	"github.com/devathh/xvibe/chat/internal/infrastructure/persistence/filem"
 	"github.com/devathh/xvibe/chat/internal/infrastructure/persistence/postgres"
 	chatpg "github.com/devathh/xvibe/chat/internal/infrastructure/persistence/postgres/chat"
 	"github.com/devathh/xvibe/chat/internal/infrastructure/security/crypto"
@@ -50,6 +55,10 @@ func New() (*App, func(), error) {
 	cfg, err := config.New(os.Getenv("PATH_CONFIG"))
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to load config: %w", err)
+	}
+
+	if err := loadPublicKey(cfg); err != nil {
+		return nil, nil, fmt.Errorf("faield to load public key: %w", err)
 	}
 
 	logHandler, err := log.SetupHandler(os.Stdout, cfg.Env)
@@ -157,4 +166,31 @@ func providePostgres(cfg *config.Config) (*gorm.DB, *chatpg.ChatRepository, erro
 	}
 
 	return db, chatpg.New(db), nil
+}
+
+func loadPublicKey(cfg *config.Config) error {
+	var (
+		client *grpc.ClientConn
+		err    error
+	)
+
+	if cfg.Services.XvibeAuth.TLS.Enable {
+		client, err = xvibe.ConnectMTLSAuth(cfg)
+	} else {
+		client, err = xvibe.ConnectInsecureAuth(cfg)
+	}
+
+	if err != nil {
+		return err
+	}
+	defer xvibe.Close(client)
+
+	authClient := authpb.NewAuthClient(client)
+
+	publicKey, err := authClient.GetPublicKey(context.Background(), nil)
+	if err != nil {
+		return err
+	}
+
+	return filem.New(cfg).Save(publicKey.GetContent())
 }

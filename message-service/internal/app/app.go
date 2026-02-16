@@ -1,10 +1,12 @@
 package app
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"os"
 
+	authpb "github.com/devathh/xvibe/message-service/api/auth/v1"
 	messagepb "github.com/devathh/xvibe/message-service/api/message/v1"
 	"github.com/devathh/xvibe/message-service/internal/application/services"
 	"github.com/devathh/xvibe/message-service/internal/domain/message"
@@ -12,9 +14,12 @@ import (
 	messageredis "github.com/devathh/xvibe/message-service/internal/infrastructure/cache/redis/message"
 	"github.com/devathh/xvibe/message-service/internal/infrastructure/config"
 	"github.com/devathh/xvibe/message-service/internal/infrastructure/crypto"
-	grpcserver "github.com/devathh/xvibe/message-service/internal/infrastructure/grpc"
-	"github.com/devathh/xvibe/message-service/internal/infrastructure/grpc/handlers"
-	"github.com/devathh/xvibe/message-service/internal/infrastructure/grpc/interceptors"
+	grpcserver "github.com/devathh/xvibe/message-service/internal/infrastructure/grpc/server"
+	"github.com/devathh/xvibe/message-service/internal/infrastructure/grpc/server/handlers"
+	"github.com/devathh/xvibe/message-service/internal/infrastructure/grpc/server/interceptors"
+	"github.com/devathh/xvibe/message-service/internal/infrastructure/grpc/xvibe"
+
+	"github.com/devathh/xvibe/message-service/internal/infrastructure/persistence/filem"
 	"github.com/devathh/xvibe/message-service/internal/infrastructure/persistence/postgres"
 	messagepg "github.com/devathh/xvibe/message-service/internal/infrastructure/persistence/postgres/message"
 	"github.com/devathh/xvibe/message-service/internal/infrastructure/security/mtls"
@@ -50,6 +55,10 @@ func New() (*App, func(), error) {
 	cfg, err := config.New(os.Getenv("PATH_CONFIG"))
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to load config: %w", err)
+	}
+
+	if err := loadPublicKey(cfg); err != nil {
+		return nil, nil, fmt.Errorf("failed to load public key file: %w", err)
 	}
 
 	logHandler, err := log.SetupHandler(os.Stdout, cfg.Env)
@@ -158,4 +167,31 @@ func provideRedis(cfg *config.Config, log *slog.Logger) (*redissdk.Client, *mess
 	}
 
 	return rClient, messageredis.New(log, rClient), nil
+}
+
+func loadPublicKey(cfg *config.Config) error {
+	var (
+		client *grpc.ClientConn
+		err    error
+	)
+
+	if cfg.Services.XvibeAuth.TLS.Enable {
+		client, err = xvibe.ConnectMTLSAuth(cfg)
+	} else {
+		client, err = xvibe.ConnectInsecureAuth(cfg)
+	}
+
+	if err != nil {
+		return err
+	}
+	defer xvibe.Close(client)
+
+	authClient := authpb.NewAuthClient(client)
+
+	publicKey, err := authClient.GetPublicKey(context.Background(), nil)
+	if err != nil {
+		return err
+	}
+
+	return filem.New(cfg).Save(publicKey.GetContent())
 }

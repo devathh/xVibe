@@ -3,6 +3,7 @@ package interceptors
 import (
 	"context"
 
+	authpb "github.com/devathh/xvibe/auth-service/api/auth/v1"
 	"github.com/devathh/xvibe/auth-service/internal/domain/session"
 	"github.com/devathh/xvibe/auth-service/pkg/consts"
 	"google.golang.org/grpc"
@@ -25,6 +26,10 @@ func New(jwtMngr session.JwtManager, authRequire map[string]bool) *InterceptorsP
 
 func (ip *InterceptorsPack) BaseInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {
+		if info.FullMethod == authpb.Auth_GetPublicKey_FullMethodName {
+			return handler(ctx, req)
+		}
+
 		md, ok := metadata.FromIncomingContext(ctx)
 		if !ok {
 			return nil, status.Error(codes.InvalidArgument, "invalid metadata")

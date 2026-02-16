@@ -68,6 +68,16 @@ service Auth {
     // with limit
     // REQUIRES: mtls connection with gateway
     rpc GetUsersByUsername(GetByUsernameRequest) returns (Users);
+
+    // Get public key 
+    // It's needed to start other service
+    // REQUIRES: mtls connection with message & chat services
+    rpc GetPublicKey(google.protobuf.Empty) returns (PublicKey);
+}
+
+message PublicKey {
+    string filename = 1;
+    bytes content = 2;
 }
 
 message Updates {

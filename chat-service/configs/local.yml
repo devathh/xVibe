@@ -26,6 +26,17 @@ service:
   cache:
     chats-ttl: 5m
 
+# settings of external services
+services:
+  xvibe-auth:
+    host: localhost
+    port: 50050
+    tls:
+      enable: false
+      client-cert: ./certs/client.crt
+      client-key: ./certs/client.key
+      ca-cert: ./certs/rootCA.pem
+
 # secrets is taken from .env
 secrets:
   postgres:

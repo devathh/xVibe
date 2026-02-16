@@ -34,6 +34,13 @@ var (
 	// JWT's
 	ErrJWTInvalidPublicKeyPath = errors.New("invalid path to public key")
 
+	// Services
+	ErrServicesInvalidHost       = errors.New("invalid host of service")
+	ErrServicesInvalidPort       = errors.New("invalid port of service")
+	ErrServicesInvalidClientCert = errors.New("invalid path to client cert")
+	ErrServicesInvalidClientKey  = errors.New("invalid path to client key")
+	ErrServicesInvalidCaCert     = errors.New("invalid path to ca cert")
+
 	// General's
 	ErrInvalidPath = errors.New("invalid path to config file")
 )
@@ -225,10 +232,54 @@ func (j *jwt) validate() error {
 	return nil
 }
 
+type xvibeAuth struct {
+	Host string `yaml:"host"`
+	Port int    `yaml:"port"`
+	TLS  struct {
+		Enable     bool   `yaml:"enable"`
+		ClientCert string `yaml:"client-cert"`
+		ClientKey  string `yaml:"client-key"`
+		CaCert     string `yaml:"ca-cert"`
+	} `yaml:"tls"`
+}
+
+func (xa *xvibeAuth) validate() error {
+	xa.Host = strings.TrimSpace(xa.Host)
+	if xa.Host == "" {
+		return ErrServicesInvalidHost
+	}
+
+	if xa.Port <= 0 || xa.Port > 65535 {
+		return ErrServicesInvalidPort
+	}
+
+	if xa.TLS.Enable {
+		xa.TLS.ClientCert = strings.TrimSpace(xa.TLS.ClientCert)
+		if xa.TLS.ClientCert == "" {
+			return ErrServicesInvalidClientCert
+		}
+
+		xa.TLS.ClientKey = strings.TrimSpace(xa.TLS.ClientKey)
+		if xa.TLS.ClientKey == "" {
+			return ErrServicesInvalidClientKey
+		}
+
+		xa.TLS.CaCert = strings.TrimSpace(xa.TLS.CaCert)
+		if xa.TLS.CaCert == "" {
+			return ErrServicesInvalidCaCert
+		}
+	}
+
+	return nil
+}
+
 type Config struct {
-	Env     string `yaml:"env"`
-	App     app    `yaml:"app"`
-	Server  server `yaml:"server"`
+	Env      string `yaml:"env"`
+	App      app    `yaml:"app"`
+	Server   server `yaml:"server"`
+	Services struct {
+		XvibeAuth xvibeAuth `yaml:"xvibe-auth"`
+	} `yaml:"services"`
 	Secrets struct {
 		Cipher   cipher   `yaml:"cipher"`
 		Postgres postgres `yaml:"postgres"`
@@ -284,6 +335,12 @@ func (c *Config) validate() error {
 	}
 	if err := c.Secrets.Postgres.validate(); err != nil {
 		return fmt.Errorf("invalid postgres: %w", err)
+	}
+	if err := c.Secrets.JWT.validate(); err != nil {
+		return fmt.Errorf("invalid jwt: %w", err)
+	}
+	if err := c.Services.XvibeAuth.validate(); err != nil {
+		return fmt.Errorf("invalid xvibe-auth: %w", err)
 	}
 
 	return nil

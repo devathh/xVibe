@@ -16,6 +16,7 @@ import (
 	grpcserver "github.com/devathh/xvibe/auth-service/internal/infrastructure/grpc"
 	"github.com/devathh/xvibe/auth-service/internal/infrastructure/grpc/handlers"
 	"github.com/devathh/xvibe/auth-service/internal/infrastructure/grpc/interceptors"
+	"github.com/devathh/xvibe/auth-service/internal/infrastructure/persistence/filem"
 	"github.com/devathh/xvibe/auth-service/internal/infrastructure/persistence/postgres"
 	userpg "github.com/devathh/xvibe/auth-service/internal/infrastructure/persistence/postgres/user"
 	"github.com/devathh/xvibe/auth-service/internal/infrastructure/security/mtls"
@@ -125,6 +126,7 @@ func provideServer(cfg *config.Config, log *slog.Logger, userRepo user.UserRepos
 		userCache,
 		sessionRepo,
 		jwtMngr,
+		filem.New(cfg),
 	)
 
 	api := handlers.New(service)

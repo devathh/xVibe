@@ -7,6 +7,7 @@ import (
 	"time"
 
 	authpb "github.com/devathh/xvibe/auth-service/api/auth/v1"
+	"github.com/devathh/xvibe/auth-service/internal/domain/filem"
 	"github.com/devathh/xvibe/auth-service/internal/domain/session"
 	"github.com/devathh/xvibe/auth-service/internal/domain/user"
 	"github.com/devathh/xvibe/auth-service/internal/infrastructure/config"
@@ -26,6 +27,7 @@ type AuthService interface {
 	GetUserByID(ctx context.Context, req *authpb.GetByIDRequest) (*authpb.User, error)
 	GetUsersByUsername(ctx context.Context, req *authpb.GetByUsernameRequest) (*authpb.Users, error)
 	LogoutAll(ctx context.Context) error
+	GetPublicKey(ctx context.Context) (*authpb.PublicKey, error)
 }
 
 type authService struct {
@@ -35,6 +37,7 @@ type authService struct {
 	userCache   user.UserCache
 	sessionRepo session.SessionRepository
 	jwtMngr     session.JwtManager
+	filemRepo   filem.FilemRepository
 }
 
 func New(
@@ -44,6 +47,7 @@ func New(
 	userCache user.UserCache,
 	sessionRepo session.SessionRepository,
 	jwtMngr session.JwtManager,
+	filemRepo filem.FilemRepository,
 ) AuthService {
 	return &authService{
 		cfg:         cfg,
@@ -52,6 +56,7 @@ func New(
 		userCache:   userCache,
 		sessionRepo: sessionRepo,
 		jwtMngr:     jwtMngr,
+		filemRepo:   filemRepo,
 	}
 }
 
@@ -443,6 +448,23 @@ func (as *authService) LogoutAll(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+// Get public key pem
+func (as *authService) GetPublicKey(ctx context.Context) (*authpb.PublicKey, error) {
+	ctxTimeout, cancel := context.WithTimeout(ctx, as.cfg.Server.Timeout)
+	defer cancel()
+
+	publicKey, err := as.filemRepo.GetPublicKey(ctxTimeout)
+	if err != nil {
+		as.log.Error("failed to get public key", slog.String("error", err.Error()))
+		return nil, status.Error(codes.Internal, consts.ErrInternalServer.Error())
+	}
+
+	return &authpb.PublicKey{
+		Filename: publicKey.Name(),
+		Content:  publicKey.Content(),
+	}, nil
 }
 
 func (as *authService) saveUserCache(ctx context.Context, user *user.User) {

@@ -21,6 +21,17 @@ server:
   # request's timeout
   timeout: 2s
 
+# settings of external services
+services:
+  xvibe-auth:
+    host: localhost
+    port: 50050
+    tls:
+      enable: false
+      client-cert: ./certs/client.crt
+      client-key: ./certs/client.key
+      ca-cert: ./certs/rootCA.crt
+
 # secrets
 secrets:
   cipher:

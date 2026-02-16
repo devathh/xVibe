@@ -37,6 +37,13 @@ var (
 	// Cipher
 	ErrCipherInvalidNonceSize = errors.New("too little size of nonce (aes-gcm)")
 
+	// Services
+	ErrServicesInvalidHost       = errors.New("invalid host of service")
+	ErrServicesInvalidPort       = errors.New("invalild port of services")
+	ErrServicesInvalidClientCert = errors.New("invalid path to client cert")
+	ErrServicesInvalidClientKey  = errors.New("invalid path to client key")
+	ErrServicesInvalidCaCert     = errors.New("invalid path to ca cert")
+
 	// General's
 	ErrInvalidPath = errors.New("invalid path to config file")
 )
@@ -243,6 +250,47 @@ func (c *cipher) validate() error {
 	return nil
 }
 
+type xvibeAuth struct {
+	Host string `yaml:"host"`
+	Port int    `yaml:"port"`
+	TLS  struct {
+		Enable     bool   `yaml:"enable"`
+		ClientCert string `yaml:"client-cert"`
+		ClientKey  string `yaml:"client-key"`
+		CaCert     string `yaml:"ca-cert"`
+	} `yaml:"tls"`
+}
+
+func (xa *xvibeAuth) validate() error {
+	xa.Host = strings.TrimSpace(xa.Host)
+	if xa.Host == "" {
+		return ErrServicesInvalidHost
+	}
+
+	if xa.Port <= 0 || xa.Port > 65535 {
+		return ErrServicesInvalidPort
+	}
+
+	if xa.TLS.Enable {
+		xa.TLS.ClientCert = strings.TrimSpace(xa.TLS.ClientCert)
+		if xa.TLS.ClientCert == "" {
+			return ErrServicesInvalidClientCert
+		}
+
+		xa.TLS.ClientKey = strings.TrimSpace(xa.TLS.ClientKey)
+		if xa.TLS.ClientKey == "" {
+			return ErrServicesInvalidClientKey
+		}
+
+		xa.TLS.CaCert = strings.TrimSpace(xa.TLS.CaCert)
+		if xa.TLS.CaCert == "" {
+			return ErrServicesInvalidCaCert
+		}
+	}
+
+	return nil
+}
+
 type Config struct {
 	Env     string `yaml:"env"`
 	App     app    `yaml:"app"`
@@ -250,6 +298,9 @@ type Config struct {
 	Service struct {
 		Cache cache `yaml:"cache"`
 	} `yaml:"service"`
+	Services struct {
+		XvibeAuth xvibeAuth `yaml:"xvibe-auth"`
+	} `yaml:"services"`
 	Secrets struct {
 		Postgres postgres `yaml:"postgres"`
 		Redis    redis    `yaml:"redis"`
@@ -309,6 +360,12 @@ func (c *Config) validate() error {
 	}
 	if err := c.Secrets.Cipher.validate(); err != nil {
 		return fmt.Errorf("invalid cipher: %w", err)
+	}
+	if err := c.Secrets.JWT.validate(); err != nil {
+		return fmt.Errorf("invalid jwt: %w", err)
+	}
+	if err := c.Services.XvibeAuth.validate(); err != nil {
+		return fmt.Errorf("invalid xvibe-auth: %w", err)
 	}
 
 	return nil
