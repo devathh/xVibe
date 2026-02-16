@@ -18,7 +18,7 @@ func LoadMTLSConfig(cfg *config.Config) (*tls.Config, error) {
 		return nil, fmt.Errorf("failed to load client cert: %w", err)
 	}
 
-	caPem, err := os.ReadFile(cfg.Server.HTTP.TLS.CaCert)
+	caPem, err := os.ReadFile(cfg.Services.XvibeChat.TLS.CaCert)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read ca cert: %w", err)
 	}

@@ -62,10 +62,6 @@ type server struct {
 			ServerKey  string `yaml:"server-key"`
 		} `yaml:"tls"`
 	} `yaml:"http"`
-	WS struct {
-		Host string `yaml:"host"`
-		Port int    `yaml:"port"`
-	} `yaml:"ws"`
 	ReadTimeout  time.Duration `yaml:"read-timeout"`
 	WriteTimeout time.Duration `yaml:"write-timeout"`
 	IdleTimeout  time.Duration `yaml:"idle-timeout"`
@@ -79,15 +75,6 @@ func (s *server) applyDef() {
 
 	if s.HTTP.Port <= 0 || s.HTTP.Port > 65535 {
 		s.HTTP.Port = 7082
-	}
-
-	s.WS.Host = strings.TrimSpace(s.WS.Host)
-	if s.WS.Host == "" {
-		s.WS.Host = "localhost"
-	}
-
-	if s.WS.Port <= 0 || s.WS.Port > 65535 {
-		s.WS.Port = 7083
 	}
 }
 

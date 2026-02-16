@@ -1,0 +1,31 @@
+# global environment of current service
+env: dev
+
+# naming of service
+app:
+  name: xvibe-rate-limiter
+  version: v0.0.1
+
+# settings of runner
+server:
+  http:
+    host: 0.0.0.0
+    port: 8000
+    # tls config
+    tls:
+      enable: true
+      server-cert: ./certs/server.crt
+      server-key: ./certs/server.key
+  read-timeout: 2s
+  write-timeout: 2s
+  idle-timeout: 30s
+
+# service's settings
+service:
+  rate-limit:
+    window: 5s
+    limit: 100
+
+# secrets
+secrets:
+  target-url: ${TARGET_URL}

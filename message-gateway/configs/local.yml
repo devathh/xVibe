@@ -9,16 +9,13 @@ app:
 # settings of server's runner
 server:
   http:
-    host: localhost
+    host: 0.0.0.0
     port: 7082
     # tls config
     tls:
       enable: true
       server-cert: ./certs/server.crt
       server-key: ./certs/server.key
-  ws:
-    host: localhost
-    port: 7083
   read-timeout: 2s
   write-timeout: 2s
   idle-timeout: 30s
@@ -26,11 +23,11 @@ server:
 # dependencies
 services:
   xvibe-message:
-    host: localhost
+    host: xvibe-message-service
     port: 50052
     # mtls config
     tls: 
-      enable: false
-      client-cert: ./certs/client.crt
-      client-key: ./certs/client.key
-      ca-cert: ./certs/rootCA.pem
+      enable: true
+      client-cert: ./gateway-certs/client.crt
+      client-key: ./gateway-certs/client.key
+      ca-cert: ./gateway-certs/rootCA.pem

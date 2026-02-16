@@ -21,13 +21,13 @@ var (
 	ErrServerTooLittleIdle  = errors.New("too little idle timeout")
 	ErrServerInvalidCert    = errors.New("invalid path to server cert")
 	ErrServerInvalidKey     = errors.New("invalid path to server key")
-	ErrServerInvalidCaCert  = errors.New("invalid path to ca cert")
 
 	// Xvibe chat's settings
 	ErrXvibeChatInvalidHost       = errors.New("invalid host")
 	ErrXvibeChatInvalidPort       = errors.New("invalid port")
 	ErrXvibeChatInvalidClientCert = errors.New("invalid path to client cert")
 	ErrXvibeChatInvalidClientKey  = errors.New("invalid path to client key")
+	ErrXvibeInvalidCaCert         = errors.New("invalid path to ca")
 
 	// General's
 	ErrInvalidPath = errors.New("invalid path to config file")
@@ -60,7 +60,6 @@ type server struct {
 			Enable     bool   `yaml:"enable"`
 			ServerCert string `yaml:"server-cert"`
 			ServerKey  string `yaml:"server-key"`
-			CaCert     string `yaml:"ca-cert"`
 		} `yaml:"tls"`
 	} `yaml:"http"`
 	ReadTimeout  time.Duration `yaml:"read-timeout"`
@@ -89,11 +88,6 @@ func (s *server) validate() error {
 		s.HTTP.TLS.ServerKey = strings.TrimSpace(s.HTTP.TLS.ServerKey)
 		if s.HTTP.TLS.ServerKey == "" {
 			return ErrServerInvalidKey
-		}
-
-		s.HTTP.TLS.CaCert = strings.TrimSpace(s.HTTP.TLS.CaCert)
-		if s.HTTP.TLS.CaCert == "" {
-			return ErrServerInvalidCaCert
 		}
 	}
 
@@ -142,6 +136,11 @@ func (xc *xvibeChat) validate() error {
 		xc.TLS.ClientKey = strings.TrimSpace(xc.TLS.ClientKey)
 		if xc.TLS.ClientKey == "" {
 			return ErrXvibeChatInvalidClientKey
+		}
+
+		xc.TLS.CaCert = strings.TrimSpace(xc.TLS.CaCert)
+		if xc.TLS.CaCert == "" {
+			return ErrXvibeInvalidCaCert
 		}
 	}
 

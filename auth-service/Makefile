@@ -4,17 +4,21 @@ make keys:
 
 make mtls:
 	mkcert -install
-	mkcert localhost 127.0.0.1
+	mkcert xvibe-auth-service 127.0.0.1
 	
 	mkdir ./certs/
-	mv localhost+1.pem server.crt
+	mv xvibe-auth-service+1.pem server.crt
 	mv ./server.crt ./certs/
-	mv localhost+1-key.pem server.key 
+	mv xvibe-auth-service+1-key.pem server.key 
 	mv ./server.key ./certs/
 
+	mkdir ./client-certs
 	mkcert -client "xvibe-auth-gateway"
 	mv xvibe-auth-gateway-client.pem client.crt
+	mv client.crt ./client-certs/
 	mv xvibe-auth-gateway-client-key.pem client.key
+	mv client.key ./client-certs/
 
 	@CA_DIR=$$(mkcert -CAROOT | tr -d '\r\n'); \
 	cp "$$CA_DIR/rootCA.pem" ./certs/
+	cp ./certs/rootCA.pem ./client-certs/

@@ -14,7 +14,7 @@ server:
     protocol: tcp
     # settings of tls
     tls:
-      enable: false
+      enable: true
       server-cert: ./certs/server.crt
       server-key: ./certs/server.key
       ca-cert: ./certs/rootCA.pem
@@ -24,13 +24,13 @@ server:
 # settings of external services
 services:
   xvibe-auth:
-    host: localhost
+    host: xvibe-auth-service
     port: 50050
     tls:
-      enable: false
-      client-cert: ./certs/client.crt
-      client-key: ./certs/client.key
-      ca-cert: ./certs/rootCA.crt
+      enable: true
+      client-cert: ./client-certs/client.crt
+      client-key: ./client-certs/client.key
+      ca-cert: ./client-certs/rootCA.pem
 
 # secrets
 secrets:
@@ -38,7 +38,7 @@ secrets:
     nonce-size: 12
   
   postgres:
-    host: localhost
+    host: postgres
     port: 5432
     sslmode: disable
     auth:
@@ -52,7 +52,7 @@ secrets:
       max-idle-time: 30m
   
   redis:
-    host: localhost
+    host: redis
     port: 6379
     auth:
       username: ${REDIS_USERNAME}

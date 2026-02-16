@@ -14,7 +14,7 @@ server:
     protocol: tcp
     # tls config
     tls:
-      enable: false
+      enable: true
       server-cert: ./certs/server.crt
       server-key: ./certs/server.key
       ca-cert: ./certs/rootCA.pem
@@ -31,7 +31,7 @@ service:
 # server's secrets
 secrets:
   postgres:
-    host: localhost
+    host: postgres
     port: 5432
     sslmode: disable
     # authorization settings
@@ -47,7 +47,7 @@ secrets:
       max-idletime: 30m
   
   redis:
-    host: localhost
+    host: redis
     port: 6379
     auth:
       username: ${REDIS_USERNAME}

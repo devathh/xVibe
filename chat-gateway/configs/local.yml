@@ -9,10 +9,10 @@ app:
 # settings of runner of server
 server:
   http:
-    host: localhost
+    host: 0.0.0.0
     port: 7081
     tls:
-      enable: false
+      enable: true
       server-cert: ./certs/server.crt
       server-key: ./certs/server.key
       ca-cert: ./certs/rootCA.pem
@@ -23,10 +23,11 @@ server:
 # settings of connected services
 services:
   xvibe-chat:
-    host: localhost
+    host: xvibe-chat-service
     port: 50051
     # settings of mtls connection
     tls:
       enable: true
-      client-cert: ./certs/client.crt
-      client-key: ./certs/client.key
+      client-cert: ./gateway-certs/client.crt
+      client-key: ./gateway-certs/client.key
+      ca-cert: ./gateway-certs/rootCA.pem
