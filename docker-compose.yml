@@ -102,6 +102,10 @@ services:
       timeout: 3s
       retries: 3
       start_period: 5s
+    depends_on:
+      - auth-gateway
+      - chat-gateway
+      - message-gateway
 
   rate-limiter:
     build:
