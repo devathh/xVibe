@@ -1,0 +1,137 @@
+services:
+  # auth-service, must be started at first all
+  auth-service:
+    build:
+      context: ./auth-service
+      dockerfile: Dockerfile
+    container_name: auth-service
+    ports:
+      - "50050:50050"
+    networks:
+      - app_network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "50050"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # auth gateway, depends only on auth-service
+  auth-gateway:
+    build:
+      context: ./auth-gateway
+      dockerfile: Dockerfile
+    container_name: auth-gateway
+    ports:
+      - "7080:7080"
+    networks:
+      - app_network
+    depends_on:
+      - auth-service
+
+  # chat service, depends on postgres, redis and auth (for parsing public key)
+  chat-service:
+    build:
+      context: ./chat-service
+      dockerfile: Dockerfile
+    container_name: chat-service
+    ports:
+      - "50051:50051"
+    networks:
+      - app_network
+    depends_on:
+      auth-service:
+        condition: service_healthy
+      
+  # chat-gateway
+  chat-gateway:
+    build:
+      context: ./chat-gateway
+      dockerfile: Dockerfile
+    container_name: chat-gateway
+    ports:
+      - "7081:7081"
+    networks:
+      - app_network
+    depends_on:
+      - chat-service
+  
+  # message-service
+  message-service:
+    build:
+      context: ./message-service
+      dockerfile: Dockerfile
+    container_name: message-service
+    ports:
+      - "50052:50052"
+    networks:
+      - app_network
+    depends_on:
+      auth-service:
+        condition: service_healthy
+  
+  message-gateway:
+    build:
+      context: ./message-gateway
+      dockerfile: Dockerfile
+    container_name: message-gateway
+    ports:
+      - "7082:7082"
+    networks:
+      - app_network
+    depends_on:
+      - message-service
+
+  nginx:
+    build:
+      context: ./deployments/nginx
+      dockerfile: Dockerfile
+    container_name: nginx
+    ports:
+      - "80:80"
+    networks:
+      - app_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+
+  postgres:
+    image: postgres:latest  
+    container_name: postgres
+    networks:
+      - app_network
+    environment:
+      - POSTGRES_USER=devathh
+      - POSTGRES_PASSWORD=1111
+      - POSTGRES_DB=xvibe
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d mydb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+  
+  redis:
+    image: redis:latest
+    container_name: redis
+    ports:
+      - "6379:6379"
+    networks:
+      - app_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+networks:
+  app_network:
+    driver: bridge

@@ -14,7 +14,7 @@ server:
     protocol: tcp
     # settings of tls
     tls:
-      enable: true
+      enable: false
       server-cert: ./certs/server.crt
       server-key: ./certs/server.key
       ca-cert: ./certs/rootCA.pem
@@ -24,10 +24,10 @@ server:
 # settings of external services
 services:
   xvibe-auth:
-    host: xvibe-auth-service
+    host: auth-service
     port: 50050
     tls:
-      enable: true
+      enable: false
       client-cert: ./client-certs/client.crt
       client-key: ./client-certs/client.key
       ca-cert: ./client-certs/rootCA.pem

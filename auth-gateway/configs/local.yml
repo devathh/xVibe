@@ -23,10 +23,10 @@ server:
 # under-hood service settings
 services:
   xvibe-auth:
-    host: xvibe-auth-service
+    host: auth-service
     port: 50050
     mtls:
-      enable: true
+      enable: false
       client-cert: ./client-certs/client.crt
       client-key: ./client-certs/client.key
       ca-cert: ./client-certs/rootCA.pem

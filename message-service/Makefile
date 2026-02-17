@@ -1,11 +1,11 @@
 make mtls:
 	mkcert -install
-	mkcert xvibe-message-service 127.0.0.1
+	mkcert xvibe-message-service 127.0.0.1 localhost
 	
 	mkdir ./certs/
-	mv xvibe-message-service+1.pem server.crt
+	mv xvibe-message-service+2.pem server.crt
 	mv ./server.crt ./certs/
-	mv xvibe-message-service+1-key.pem server.key 
+	mv xvibe-message-service+2-key.pem server.key 
 	mv ./server.key ./certs/
 
 	mkdir ./gateway-certs/

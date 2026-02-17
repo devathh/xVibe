@@ -15,7 +15,6 @@ server:
       enable: true
       server-cert: ./certs/server.crt
       server-key: ./certs/server.key
-      ca-cert: ./certs/rootCA.pem
   read-timeout: 2s
   write-timeout: 2s
   idle-timeout: 30s
@@ -23,11 +22,11 @@ server:
 # settings of connected services
 services:
   xvibe-chat:
-    host: xvibe-chat-service
+    host: chat-service
     port: 50051
     # settings of mtls connection
     tls:
-      enable: true
+      enable: false
       client-cert: ./gateway-certs/client.crt
       client-key: ./gateway-certs/client.key
       ca-cert: ./gateway-certs/rootCA.pem

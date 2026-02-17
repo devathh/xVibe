@@ -23,11 +23,11 @@ server:
 # dependencies
 services:
   xvibe-message:
-    host: xvibe-message-service
+    host: message-service
     port: 50052
     # mtls config
     tls: 
-      enable: true
+      enable: false
       client-cert: ./gateway-certs/client.crt
       client-key: ./gateway-certs/client.key
       ca-cert: ./gateway-certs/rootCA.pem

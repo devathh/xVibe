@@ -14,7 +14,7 @@ server:
     protocol: tcp
     # tls config
     tls:
-      enable: true
+      enable: false
       server-cert: ./certs/server.crt
       server-key: ./certs/server.key
       ca-cert: ./certs/rootCA.pem

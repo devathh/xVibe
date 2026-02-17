@@ -79,7 +79,7 @@ func provideGRPC(cfg *config.Config) (*grpc.ClientConn, chatpb.ChatClient, error
 		err    error
 	)
 
-	if cfg.Services.XvibeChat.TLS.Enable {
+	if !cfg.Services.XvibeChat.TLS.Enable {
 		client, err = xvibe.ConnectInsecureXvibeChat(cfg)
 	} else {
 		client, err = xvibe.ConnectMTLSXvibeChat(cfg)
