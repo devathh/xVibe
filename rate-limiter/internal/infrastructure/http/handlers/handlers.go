@@ -9,6 +9,7 @@ import (
 
 	"github.com/devathh/xvibe/rate-limiter/internal/infrastructure/config"
 	"github.com/devathh/xvibe/rate-limiter/internal/infrastructure/http/middlewares"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
@@ -48,6 +49,11 @@ func loadRouter(cfg *config.Config) (*gin.Engine, error) {
 		cfg.Service.RateLimit.Limit,
 		cfg.Service.RateLimit.Window,
 	))
+	router.Use(cors.New(cors.Config{
+		AllowAllOrigins: true,
+		AllowMethods:    []string{"POST", "GET", "DELETE", "PATCH", "OPTIONS", "HEAD"},
+		AllowHeaders:    []string{"Access-Control-Allow-Headers", "Content-Type", "Authorization"},
+	}))
 
 	return router, nil
 }
