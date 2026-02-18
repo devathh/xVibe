@@ -13,8 +13,11 @@ FROM alpine:latest
 COPY --from=builder ./app/xvb ./
 COPY --from=builder ./app/.env ./
 COPY --from=builder ./app/configs ./configs/
-COPY --from=builder ./app/jwtRS256.key ./
-COPY --from=builder ./app/jwtRS256.key.pub ./
+COPY --from=builder ./app/Makefile ./
 
+RUN apk add openssl
+RUN apk add make
+
+RUN make keys
 
 CMD [ "./xvb" ]
