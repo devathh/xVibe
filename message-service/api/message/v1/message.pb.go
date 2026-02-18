@@ -30,7 +30,8 @@ type MessageModel struct {
 	ChatId        string                 `protobuf:"bytes,2,opt,name=chat_id,json=chatId,proto3" json:"chat_id,omitempty"`
 	AuthorId      string                 `protobuf:"bytes,3,opt,name=author_id,json=authorId,proto3" json:"author_id,omitempty"`
 	Body          string                 `protobuf:"bytes,4,opt,name=body,proto3" json:"body,omitempty"`
-	SentAt        *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=sent_at,json=sentAt,proto3" json:"sent_at,omitempty"`
+	IsSender      bool                   `protobuf:"varint,5,opt,name=is_sender,json=isSender,proto3" json:"is_sender,omitempty"`
+	SentAt        *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=sent_at,json=sentAt,proto3" json:"sent_at,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -91,6 +92,13 @@ func (x *MessageModel) GetBody() string {
 		return x.Body
 	}
 	return ""
+}
+
+func (x *MessageModel) GetIsSender() bool {
+	if x != nil {
+		return x.IsSender
+	}
+	return false
 }
 
 func (x *MessageModel) GetSentAt() *timestamppb.Timestamp {
@@ -357,13 +365,14 @@ var File_message_v1_message_proto protoreflect.FileDescriptor
 const file_message_v1_message_proto_rawDesc = "" +
 	"\n" +
 	"\x18message/v1/message.proto\x12\n" +
-	"message.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1bgoogle/protobuf/empty.proto\"\xa3\x01\n" +
+	"message.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1bgoogle/protobuf/empty.proto\"\xc0\x01\n" +
 	"\fMessageModel\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x17\n" +
 	"\achat_id\x18\x02 \x01(\tR\x06chatId\x12\x1b\n" +
 	"\tauthor_id\x18\x03 \x01(\tR\bauthorId\x12\x12\n" +
-	"\x04body\x18\x04 \x01(\tR\x04body\x123\n" +
-	"\asent_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\x06sentAtJ\x04\b\x06\x10\v\"`\n" +
+	"\x04body\x18\x04 \x01(\tR\x04body\x12\x1b\n" +
+	"\tis_sender\x18\x05 \x01(\bR\bisSender\x123\n" +
+	"\asent_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\x06sentAtJ\x04\b\a\x10\v\"`\n" +
 	"\rMessageModels\x124\n" +
 	"\bmessages\x18\x01 \x03(\v2\x18.message.v1.MessageModelR\bmessages\x12\x19\n" +
 	"\bhas_more\x18\x02 \x01(\bR\ahasMore\"<\n" +

@@ -199,6 +199,7 @@ func (ms *messageService) ConnectNewMessages(ctx context.Context, req *messagepb
 			AuthorId: m.AuthorID().String(),
 			Body:     string(encodedBody),
 			SentAt:   timestamppb.New(m.SentAt()),
+			IsSender: userID == m.AuthorID(),
 		})
 	})
 
@@ -269,6 +270,7 @@ func (ms *messageService) GetHistory(ctx context.Context, req *messagepb.GetRequ
 			AuthorId: msg.AuthorID().String(),
 			Body:     string(encryptedBody),
 			SentAt:   timestamppb.New(msg.SentAt()),
+			IsSender: userID == msg.AuthorID(),
 		}
 	}
 

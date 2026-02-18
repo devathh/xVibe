@@ -11,10 +11,11 @@ message MessageModel {
     string chat_id = 2;
     string author_id = 3;
     string body = 4;
+    bool is_sender = 5;
 
-    google.protobuf.Timestamp sent_at = 5;
+    google.protobuf.Timestamp sent_at = 6;
 
-    reserved 6 to 10;
+    reserved 7 to 10;
 }
 
 message MessageModels {
