@@ -2,7 +2,6 @@ package services
 
 import (
 	"errors"
-	"fmt"
 	"log/slog"
 	"net/http"
 	"strings"
@@ -333,9 +332,9 @@ func (ags *authGatewayService) baseMD(md *metadata.MD, ctx *gin.Context) {
 }
 
 func (ags *authGatewayService) tokenMD(md *metadata.MD, ctx *gin.Context) error {
-	token, err := ctx.Cookie("ac")
-	if err != nil {
-		return fmt.Errorf("failed to get cookie: %w", err)
+	token := strings.TrimSpace(ctx.GetHeader("Authorization"))
+	if token == "" {
+		return consts.ErrInvalidToken
 	}
 
 	md.Set("authorization", token)

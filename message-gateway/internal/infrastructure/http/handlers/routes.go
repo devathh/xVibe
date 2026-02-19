@@ -37,10 +37,10 @@ func (r *Routes) CreateMessage() gin.HandlerFunc {
 			return
 		}
 
-		token, err := ctx.Cookie("ac")
+		token, err := r.getToken(ctx)
 		if err != nil || token == "" {
 			ctx.JSON(http.StatusUnauthorized, gin.H{
-				"error": "invalid token",
+				"error": err.Error(),
 			})
 			return
 		}
@@ -68,10 +68,10 @@ func (r *Routes) DeleteMessage() gin.HandlerFunc {
 			return
 		}
 
-		token, err := ctx.Cookie("ac")
+		token, err := r.getToken(ctx)
 		if err != nil || token == "" {
 			ctx.JSON(http.StatusUnauthorized, gin.H{
-				"error": "invalid token",
+				"error": err.Error(),
 			})
 			return
 		}
@@ -91,10 +91,10 @@ func (r *Routes) DeleteMessage() gin.HandlerFunc {
 
 func (r *Routes) GetHistory() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		token, err := ctx.Cookie("ac")
+		token, err := r.getToken(ctx)
 		if err != nil || token == "" {
 			ctx.JSON(http.StatusUnauthorized, gin.H{
-				"error": "invalid token",
+				"error": err.Error(),
 			})
 			return
 		}
@@ -154,10 +154,10 @@ func (r *Routes) ConnectNewMessages() gin.HandlerFunc {
 			return
 		}
 
-		token, err := ctx.Cookie("ac")
+		token, err := r.getToken(ctx)
 		if err != nil || token == "" {
 			ctx.JSON(http.StatusUnauthorized, gin.H{
-				"error": "invalid token",
+				"error": err.Error(),
 			})
 			return
 		}
@@ -188,4 +188,13 @@ func (r *Routes) returnErrCode(err error) (int, string) {
 		slog.String("code", st.Code().String()),
 	)
 	return http.StatusInternalServerError, consts.ErrInternalServer.Error()
+}
+
+func (r *Routes) getToken(ctx *gin.Context) (string, error) {
+	token := strings.TrimSpace(ctx.GetHeader("Authorization"))
+	if token == "" {
+		return "", consts.ErrInvalidToken
+	}
+
+	return token, nil
 }

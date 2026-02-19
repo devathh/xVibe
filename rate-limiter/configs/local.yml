@@ -13,7 +13,7 @@ server:
     port: 8081
     # tls config
     tls:
-      enable: true
+      enable: false
       server-cert: ./certs/server.crt
       server-key: ./certs/server.key
   read-timeout: 2s

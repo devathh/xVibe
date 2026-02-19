@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/devathh/xvibe/chat-gateway/internal/application/dtos"
 	"github.com/devathh/xvibe/chat-gateway/internal/application/services"
@@ -29,10 +30,10 @@ func (r *Routes) Create() gin.HandlerFunc {
 			return
 		}
 
-		token, err := ctx.Cookie("ac")
+		token, err := r.getToken(ctx)
 		if err != nil {
 			ctx.JSON(http.StatusUnauthorized, gin.H{
-				"error": consts.ErrInvalidToken.Error(),
+				"error": err.Error(),
 			})
 			return
 		}
@@ -59,10 +60,10 @@ func (r *Routes) Delete() gin.HandlerFunc {
 			return
 		}
 
-		token, err := ctx.Cookie("ac")
+		token, err := r.getToken(ctx)
 		if err != nil {
 			ctx.JSON(http.StatusUnauthorized, gin.H{
-				"error": consts.ErrInvalidToken.Error(),
+				"error": err.Error(),
 			})
 			return
 		}
@@ -89,10 +90,10 @@ func (r *Routes) UpdateGroup() gin.HandlerFunc {
 			return
 		}
 
-		token, err := ctx.Cookie("ac")
+		token, err := r.getToken(ctx)
 		if err != nil {
 			ctx.JSON(http.StatusUnauthorized, gin.H{
-				"error": consts.ErrInvalidToken.Error(),
+				"error": err.Error(),
 			})
 			return
 		}
@@ -119,10 +120,10 @@ func (r *Routes) AddMembers() gin.HandlerFunc {
 			return
 		}
 
-		token, err := ctx.Cookie("ac")
+		token, err := r.getToken(ctx)
 		if err != nil {
 			ctx.JSON(http.StatusUnauthorized, gin.H{
-				"error": consts.ErrInvalidToken.Error(),
+				"error": err.Error(),
 			})
 			return
 		}
@@ -163,10 +164,10 @@ func (r *Routes) DeleteMembers() gin.HandlerFunc {
 
 func (r *Routes) GetSelfChats() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		token, err := ctx.Cookie("ac")
+		token, err := r.getToken(ctx)
 		if err != nil {
 			ctx.JSON(http.StatusUnauthorized, gin.H{
-				"error": consts.ErrInvalidToken.Error(),
+				"error": err.Error(),
 			})
 			return
 		}
@@ -193,10 +194,10 @@ func (r *Routes) GetChat() gin.HandlerFunc {
 			return
 		}
 
-		token, err := ctx.Cookie("ac")
+		token, err := r.getToken(ctx)
 		if err != nil {
 			ctx.JSON(http.StatusUnauthorized, gin.H{
-				"error": consts.ErrInvalidToken.Error(),
+				"error": err.Error(),
 			})
 			return
 		}
@@ -211,4 +212,13 @@ func (r *Routes) GetChat() gin.HandlerFunc {
 
 		ctx.JSON(code, resp)
 	}
+}
+
+func (r *Routes) getToken(ctx *gin.Context) (string, error) {
+	token := strings.TrimSpace(ctx.GetHeader("Authorization"))
+	if token == "" {
+		return "", consts.ErrInvalidToken
+	}
+
+	return token, nil
 }

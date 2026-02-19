@@ -1,6 +1,7 @@
 package middlewares
 
 import (
+	"fmt"
 	"net/http"
 	"sync"
 	"time"
@@ -23,23 +24,6 @@ func NewRateLimiter(limit int, window time.Duration) *rateLimiter {
 		timestamps: map[string]time.Time{},
 		limit:      limit,
 		window:     window,
-	}
-}
-
-func (rl *rateLimiter) cleanUp() {
-	ticker := time.NewTicker(rl.window)
-	defer ticker.Stop()
-
-	for range ticker.C {
-		rl.mu.Lock()
-		now := time.Now()
-		for ip, ts := range rl.timestamps {
-			if now.Sub(ts) > rl.window {
-				delete(rl.counters, ip)
-				delete(rl.timestamps, ip)
-			}
-		}
-		rl.mu.Unlock()
 	}
 }
 
@@ -68,6 +52,7 @@ func NewRateLimitMiddleware(maxTimes int, windowTime time.Duration) gin.HandlerF
 	rl := NewRateLimiter(maxTimes, windowTime)
 
 	return func(ctx *gin.Context) {
+		fmt.Println(ctx.ClientIP())
 		if !rl.allow(ctx.ClientIP()) {
 			ctx.AbortWithStatusJSON(http.StatusTooManyRequests, gin.H{
 				"error": "too many requests",
